@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulación Monte Carlo: Estrategias de Ruleta | Sarnecki (2026)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <!-- TOP BAR -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center text-xl font-bold shadow-lg shadow-rose-500/20">
+          🎰
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            ¿Gana alguna estrategia a la ruleta?
+            <span class="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">● Réplica Funcional Lista</span>
+          </h1>
+          <p class="text-xs text-slate-400">Monte Carlo (3,36M sesiones) · Basado en Sarnecki (2026), JCSI · Núcleo C + Python</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-slate-400 font-mono bg-slate-900 px-2.5 py-1 rounded border border-slate-800">
+          EV = -1/37 ≈ -2.70%
+        </span>
+        <button onclick="switchTab('tab-expo')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3.5 py-1.5 rounded-lg font-medium transition shadow flex items-center gap-1.5">
+          <span>🎓</span> Guía Exposición
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="border-b border-slate-800 bg-slate-900/50">
+    <div class="max-w-7xl mx-auto px-4 flex space-x-8 text-sm">
+      <button onclick="switchTab('tab-global')" id="btn-tab-global" class="py-3 px-1 tab-active transition">
+        📊 Resultados & Comparativa Paper
+      </button>
+      <button onclick="switchTab('tab-sim')" id="btn-tab-sim" class="py-3 px-1 text-slate-400 hover:text-slate-200 transition">
+        ⚡ Simulador Monte Carlo en Vivo
+      </button>
+      <button onclick="switchTab('tab-traj')" id="btn-tab-traj" class="py-3 px-1 text-slate-400 hover:text-slate-200 transition">
+        📈 Visualizador de Trayectorias
+      </button>
+      <button onclick="switchTab('tab-expo')" id="btn-tab-expo" class="py-3 px-1 text-slate-400 hover:text-slate-200 transition">
+        🎯 Guía para Defender / Exponer
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-x-0">
+
+    <!-- ==================== TAB 1: RESULTADOS GLOBALES ==================== -->
+    <section id="tab-global" class="space-y-6">
+      
+      <!-- CARDS RESUMEN -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4">
+          <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Estrategias</div>
+          <div class="text-2xl font-bold text-white mt-1">7 Sistemas</div>
+          <div class="text-xs text-slate-400 mt-1">Fijas, progresivas y proporcionales</div>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4">
+          <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Escenarios</div>
+          <div class="text-2xl font-bold text-sky-400 mt-1">48 Combinaciones</div>
+          <div class="text-xs text-slate-400 mt-1">Bankroll × Límite × Giros</div>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4">
+          <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Simulación Total</div>
+          <div class="text-2xl font-bold text-purple-400 mt-1">3.360.000</div>
+          <div class="text-xs text-slate-400 mt-1">Sesiones de Monte Carlo en C</div>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-4">
+          <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Conclusión Clave</div>
+          <div class="text-2xl font-bold text-rose-400 mt-1">Ninguna Gana</div>
+          <div class="text-xs text-slate-400 mt-1">Todas tienen ganancia media negativa</div>
+        </div>
+      </div>
+
+      <!-- GRAFICAS COMPARATIVAS -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-slate-200 mb-1 flex items-center gap-2">
+            <span>📉</span> Ganancia Media [unidades]
+          </h3>
+          <p class="text-xs text-slate-400 mb-3">Todas pierden en promedio; Flat es la que menos pierde (-24.0 u).</p>
+          <div class="h-64 relative">
+            <canvas id="chartMean"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-slate-200 mb-1 flex items-center gap-2">
+            <span>⚖️</span> Prob. Ganar vs Prob. Ruina [%]
+          </h3>
+          <p class="text-xs text-slate-400 mb-3">Fibonacci gana 53.7% de sesiones pero se arruina en 32.8%.</p>
+          <div class="h-64 relative">
+            <canvas id="chartProb"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-slate-200 mb-1 flex items-center gap-2">
+            <span>💥</span> Riesgo de Cola: CVaR 95%
+          </h3>
+          <p class="text-xs text-slate-400 mb-3">Pérdida esperada en el peor 5% de las sesiones simuladas.</p>
+          <div class="h-64 relative">
+            <canvas id="chartCvar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA DETALLADA: COMPARATIVA PAPER VS REPLICA -->
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-700 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <span>📋</span> Tabla Comparativa: Paper Sarnecki (2026) vs Nuestra Réplica
+            </h2>
+            <p class="text-xs text-slate-400">Datos agregados calculados con el núcleo en C compilado y analizado con SciPy/Pandas.</p>
+          </div>
+          <span class="text-xs bg-slate-900 text-slate-300 px-3 py-1 rounded-md border border-slate-700 font-mono">
+            3.36M sesiones evaluadas
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Estrategia</th>
+                <th class="py-3 px-3 text-right">Media (Paper)</th>
+                <th class="py-3 px-3 text-right text-sky-400 font-bold">Media (Mía)</th>
+                <th class="py-3 px-3 text-right">P(Ganar)</th>
+                <th class="py-3 px-3 text-right">Ruina (Paper)</th>
+                <th class="py-3 px-3 text-right text-rose-400 font-bold">Ruina (Mía)</th>
+                <th class="py-3 px-3 text-right">CVaR 95%</th>
+                <th class="py-3 px-3 text-right">Drawdown</th>
+                <th class="py-3 px-4 text-center">Coincidencia</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-table-body" class="divide-y divide-slate-800">
+              <!-- Llenado dinámico por JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: SIMULADOR MONTE CARLO ==================== -->
+    <section id="tab-sim" class="space-y-6 hidden">
+      
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5">
+        <h2 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+          <span>⚡</span> Simulador Interactivo en Tiempo Real
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">
+          Ajusta los parámetros para correr una simulación Monte Carlo instantánea usando el núcleo nativo en C compilado.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Estrategia</label>
+            <select id="sim-strat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="0">Flat betting</option>
+              <option value="1" selected>Martingale</option>
+              <option value="2">Fibonacci</option>
+              <option value="3">D'Alembert</option>
+              <option value="4">Labouchere</option>
+              <option value="5">Fixed-fractional (2%)</option>
+              <option value="6">Fractional Kelly</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Bankroll Inicial ($B_0$)</label>
+            <select id="sim-b0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="100">100 unidades</option>
+              <option value="200" selected>200 unidades</option>
+              <option value="500">500 unidades</option>
+              <option value="1000">1000 unidades</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Límite de Mesa</label>
+            <select id="sim-limit" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="32">32 unidades</option>
+              <option value="64" selected>64 unidades</option>
+              <option value="128">128 unidades</option>
+              <option value="256">256 unidades</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Giros por Sesión</label>
+            <select id="sim-spins" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="200">200 giros (corta)</option>
+              <option value="500" selected>500 giros (media)</option>
+              <option value="2000">2000 giros (larga)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Número de Sesiones</label>
+            <select id="sim-nsess" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="1000">1.000 sesiones</option>
+              <option value="5000" selected>5.000 sesiones</option>
+              <option value="10000">10.000 sesiones</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between">
+          <button onclick="runLiveSimulation()" id="btn-run-sim" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-5 py-2.5 rounded-lg transition shadow-lg shadow-blue-600/30 flex items-center gap-2">
+            <span>▶️</span> Ejecutar Simulación en Vivo (C-Kernel)
+          </button>
+          <span id="sim-status" class="text-xs text-slate-400">Listo para simular</span>
+        </div>
+      </div>
+
+      <!-- RESULTADOS DEL SIMULADOR EN VIVO -->
+      <div id="sim-results-panel" class="space-y-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+            <div class="text-[11px] text-slate-400">Ganancia Media</div>
+            <div id="sim-kpi-mean" class="text-lg font-bold text-white mt-0.5">-</div>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+            <div class="text-[11px] text-slate-400">Prob. Ganar</div>
+            <div id="sim-kpi-pwin" class="text-lg font-bold text-emerald-400 mt-0.5">-</div>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+            <div class="text-[11px] text-slate-400">Prob. Ruina</div>
+            <div id="sim-kpi-pruin" class="text-lg font-bold text-rose-400 mt-0.5">-</div>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+            <div class="text-[11px] text-slate-400">Drawdown Medio</div>
+            <div id="sim-kpi-drawdown" class="text-lg font-bold text-amber-400 mt-0.5">-</div>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+            <div class="text-[11px] text-slate-400">VaR 95%</div>
+            <div id="sim-kpi-var95" class="text-lg font-bold text-purple-400 mt-0.5">-</div>
+          </div>
+          <div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+            <div class="text-[11px] text-slate-400">CVaR 95%</div>
+            <div id="sim-kpi-cvar95" class="text-lg font-bold text-purple-300 mt-0.5">-</div>
+          </div>
+        </div>
+
+        <!-- GRAFICA DISTRIBUCION -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-slate-200 mb-1">
+            Distribución de Resultados (Histograma de Beneficio Final)
+          </h3>
+          <p class="text-xs text-slate-400 mb-3">Observa el sesgo (skewness) y la cola izquierda (pérdidas extremas acumuladas en el bankroll).</p>
+          <div class="h-72 relative">
+            <canvas id="chartHistogram"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: VISUALIZADOR DE TRAYECTORIAS ==================== -->
+    <section id="tab-traj" class="space-y-6 hidden">
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5">
+        <h2 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+          <span>📈</span> Visualizador de Trayectoria Giro a Giro
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">
+          Mira cómo evoluciona el bankroll de un jugador tiro por tiro. Permite entender de manera visual por qué las estrategias progresivas dan la ilusión de ganar hasta que ocurre la caída abrupta.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Estrategia</label>
+            <select id="traj-strat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="0">Flat betting (apuesta constante 1)</option>
+              <option value="1" selected>Martingale (doblar tras perder)</option>
+              <option value="2">Fibonacci (retroceder 2 pasos)</option>
+              <option value="3">D'Alembert (+1 pérdida, -1 victoria)</option>
+              <option value="4">Labouchere (cancelar extremos)</option>
+              <option value="5">Fixed-fractional (2% del bankroll)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Bankroll Inicial</label>
+            <input type="number" id="traj-b0" value="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Límite de Mesa</label>
+            <input type="number" id="traj-limit" value="64" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Cantidad de Giros</label>
+            <input type="number" id="traj-spins" value="200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="loadTrajectory()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <span>🎲</span> Simular Nueva Sesión Individual
+          </button>
+          <span id="traj-status-badge" class="text-xs px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300">
+            Sesión simulada
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+        <h3 class="text-sm font-semibold text-slate-200 mb-1">Curva del Bankroll durante la Sesión</h3>
+        <p class="text-xs text-slate-400 mb-3">La línea roja horizontal marca el nivel de inicio. Si llega a 0, ocurre la ruina del jugador.</p>
+        <div class="h-80 relative">
+          <canvas id="chartTrajectory"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: GUIA DE EXPOSICION ==================== -->
+    <section id="tab-expo" class="space-y-6 hidden">
+      <div class="bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-slate-900 border border-indigo-700/50 rounded-xl p-6">
+        <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+          <span>🎓</span> Guion y Argumentos Clave para Exponer / Exonerar
+        </h2>
+        <p class="text-sm text-slate-300">
+          Estructura recomendada para responder con máxima solvencia técnica ante el profesor o jurado evaluador.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- PUNTO 1 -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-amber-400 font-semibold text-sm">
+            <span>1️⃣</span> El Problema y la Hipótesis Central
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong>¿Gana alguna estrategia?</strong> No. En ruleta europea hay 37 casillas (0 al 36). Al apostar a rojo/negro, la probabilidad de ganar es 
+            <code class="text-amber-300 font-bold">18/37 = 48.65%</code>.
+          </p>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            El valor esperado por unidad apostada es:
+            <code class="text-rose-300 font-bold">E[X] = (18/37)(+1) + (19/37)(-1) = -1/37 ≈ -2.70%</code>.
+          </p>
+          <p class="text-xs text-slate-400 italic">
+            "Las estrategias de apuesta no pueden modificar las probabilidades del juego independiente. Solo redistribuyen el riesgo temporal."
+          </p>
+        </div>
+
+        <!-- PUNTO 2 -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-sky-400 font-semibold text-sm">
+            <span>2️⃣</span> La Ilusión de las Estrategias Progresivas
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong>¿Por qué Fibonacci tiene 53.7% de probabilidad de ganar?</strong>
+            Porque las estrategias progresivas cambian la forma de la distribución: obtienen <em>muchas ganancias pequeñas</em> a cambio de <em>pocas pérdidas catastróficas</em>.
+          </p>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Cuando la racha perdedora se prolonga, la apuesta supera el límite de mesa o el bankroll, provocando una ruina del <strong class="text-rose-400">32.8%</strong>.
+          </p>
+        </div>
+
+        <!-- PUNTO 3 -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-purple-400 font-semibold text-sm">
+            <span>3️⃣</span> Métricas de Riesgo: VaR y CVaR
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            No basta con mirar la media o la mediana. Evaluamos <strong>CVaR (Conditional Value at Risk)</strong>: la pérdida esperada en el peor 5% (o 1%) de las sesiones.
+          </p>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Flat betting tiene un CVaR 95% de <strong class="text-emerald-400">-115.5</strong>, mientras Martingale y D'Alembert se desploman a <strong class="text-rose-400">-635.6</strong> y <strong class="text-rose-400">-1000</strong> (pérdida total del capital).
+          </p>
+        </div>
+
+        <!-- PUNTO 4 -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+            <span>4️⃣</span> Preguntas Trampa del Jurado
+          </div>
+          <ul class="text-xs text-slate-300 space-y-2">
+            <li>
+              <strong>P: ¿Por qué Kelly no ayuda?</strong><br>
+              <span class="text-slate-400">R: La fórmula de Kelly optimiza el crecimiento logarítmico cuando hay ventaja estadística (Edge > 0). En la ruleta europea no hay ventaja; actúa como regla de gestión de capital pero no vuelve positivo el juego.</span>
+            </li>
+            <li>
+              <strong>P: ¿Por qué difiere ligeramente Labouchere con el paper?</strong><br>
+              <span class="text-slate-400">R: Porque el paper de Sarnecki no especifica la secuencia inicial ni la política de corte al quedarse con una sola cifra. Flat, Martingale y Fibonacci coinciden con precisión milimétrica.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let metricsData = [];
+    let chartMeanInstance = null;
+    let chartProbInstance = null;
+    let chartCvarInstance = null;
+    let chartHistInstance = null;
+    let chartTrajInstance = null;
+
+    function switchTab(tabId) {
+      ['tab-global', 'tab-sim', 'tab-traj', 'tab-expo'].forEach(t => {
+        document.getElementById(t).classList.add('hidden');
+        const b = document.getElementById('btn-' + t);
+        if (b) {
+          b.classList.remove('tab-active');
+          b.classList.add('text-slate-400');
+        }
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('tab-active');
+        activeBtn.classList.remove('text-slate-400');
+      }
+
+      if (tabId === 'tab-traj' && !chartTrajInstance) {
+        loadTrajectory();
+      }
+      if (tabId === 'tab-sim' && !chartHistInstance) {
+        runLiveSimulation();
+      }
+    }
+
+    async function fetchMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        const json = await res.json();
+        if (json.success) {
+          metricsData = json.data;
+          renderMetricsTable(metricsData);
+          renderGlobalCharts(metricsData);
+        }
+      } catch (e) {
+        console.error('Error fetching metrics:', e);
+      }
+    }
+
+    function renderMetricsTable(data) {
+      const tbody = document.getElementById('metrics-table-body');
+      tbody.innerHTML = '';
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+        const diffRuin = Math.abs(item.p_ruin - item.paper_p_ruin).toFixed(1);
+        const matchBadge = diffRuin <= 1.0 
+          ? `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px]">Exacta (Δ ${diffRuin}%)</span>`
+          : `<span class="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-[10px]">Aprox (supuesto)</span>`;
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-medium text-white">${item.strategy}</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-400">${item.paper_mean.toFixed(1)}</td>
+          <td class="py-3 px-3 text-right font-mono text-sky-400 font-bold">${item.mean_profit.toFixed(1)}</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-300">${item.p_profit.toFixed(1)}%</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-400">${item.paper_p_ruin.toFixed(1)}%</td>
+          <td class="py-3 px-3 text-right font-mono text-rose-400 font-bold">${item.p_ruin.toFixed(1)}%</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-300">${item.CVaR95.toFixed(0)}</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-300">${item.avg_drawdown.toFixed(0)}</td>
+          <td class="py-3 px-4 text-center">${matchBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderGlobalCharts(data) {
+      const labels = data.map(d => d.strategy);
+      const means = data.map(d => d.mean_profit);
+      const pWins = data.map(d => d.p_profit);
+      const pRuins = data.map(d => d.p_ruin);
+      const cvars = data.map(d => d.CVaR95);
+
+      // 1. Chart Mean
+      const ctxMean = document.getElementById('chartMean').getContext('2d');
+      chartMeanInstance = new Chart(ctxMean, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Ganancia media (u.)',
+            data: means,
+            backgroundColor: 'rgba(239, 68, 68, 0.75)',
+            borderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          }
+        }
+      });
+
+      // 2. Chart Probabilities
+      const ctxProb = document.getElementById('chartProb').getContext('2d');
+      chartProbInstance = new Chart(ctxProb, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'P(Ganar) %',
+              data: pWins,
+              backgroundColor: 'rgba(16, 185, 129, 0.75)',
+              borderRadius: 4
+            },
+            {
+              label: 'P(Ruina) %',
+              data: pRuins,
+              backgroundColor: 'rgba(244, 63, 94, 0.75)',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          }
+        }
+      });
+
+      // 3. Chart CVaR
+      const ctxCvar = document.getElementById('chartCvar').getContext('2d');
+      chartCvarInstance = new Chart(ctxCvar, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'CVaR 95%',
+            data: cvars,
+            backgroundColor: 'rgba(168, 85, 247, 0.75)',
+            borderColor: 'rgba(168, 85, 247, 1)',
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          }
+        }
+      });
+    }
+
+    async function runLiveSimulation() {
+      const btn = document.getElementById('btn-run-sim');
+      const status = document.getElementById('sim-status');
+      btn.disabled = true;
+      status.innerText = "⏳ Simulando en C...";
+
+      const strat = document.getElementById('sim-strat').value;
+      const b0 = document.getElementById('sim-b0').value;
+      const limit = document.getElementById('sim-limit').value;
+      const spins = document.getElementById('sim-spins').value;
+      const nsess = document.getElementById('sim-nsess').value;
+
+      try {
+        const res = await fetch(`/api/simulate_custom?strat=${strat}&b0=${b0}&limit=${limit}&spins=${spins}&nsess=${nsess}`);
+        const json = await res.json();
+        if (json.success) {
+          const d = json.data;
+          document.getElementById('sim-kpi-mean').innerText = d.mean_profit + ' u';
+          document.getElementById('sim-kpi-pwin').innerText = d.p_win + '%';
+          document.getElementById('sim-kpi-pruin').innerText = d.p_ruin + '%';
+          document.getElementById('sim-kpi-drawdown').innerText = d.avg_drawdown + ' u';
+          document.getElementById('sim-kpi-var95').innerText = d.var95;
+          document.getElementById('sim-kpi-cvar95').innerText = d.cvar95;
+
+          renderHistogram(d.hist_bins, d.hist_counts, d.strategy);
+          status.innerText = `✅ Completado (${nsess} sesiones en milisegundos)`;
+        }
+      } catch (err) {
+        status.innerText = "Error al simular";
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderHistogram(bins, counts, stratName) {
+      const ctx = document.getElementById('chartHistogram').getContext('2d');
+      if (chartHistInstance) chartHistInstance.destroy();
+
+      chartHistInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: bins,
+          datasets: [{
+            label: `Frecuencia de Ganancia/Pérdida (${stratName})`,
+            data: counts,
+            backgroundColor: bins.map(b => b >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
+            borderRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1' } }
+          },
+          scales: {
+            x: { 
+              title: { display: true, text: 'Resultado Final [unidades]', color: '#94a3b8' },
+              ticks: { color: '#94a3b8' } 
+            },
+            y: { 
+              title: { display: true, text: 'N° de Sesiones', color: '#94a3b8' },
+              ticks: { color: '#94a3b8' }, 
+              grid: { color: '#334155' } 
+            }
+          }
+        }
+      });
+    }
+
+    async function loadTrajectory() {
+      const strat = document.getElementById('traj-strat').value;
+      const b0 = document.getElementById('traj-b0').value;
+      const limit = document.getElementById('traj-limit').value;
+      const spins = document.getElementById('traj-spins').value;
+      const badge = document.getElementById('traj-status-badge');
+
+      badge.innerText = "Simulando...";
+
+      try {
+        const res = await fetch(`/api/trajectory?strat=${strat}&b0=${b0}&limit=${limit}&spins=${spins}`);
+        const json = await res.json();
+        if (json.success) {
+          const t = json.data;
+          renderTrajectoryChart(t.bankrolls, b0, json.strategy, t.ruined);
+          badge.innerText = t.ruined ? "💥 Sesión terminó en RUINA" : `Resultado final: ${t.final_profit > 0 ? '+' : ''}${t.final_profit} u`;
+          badge.className = t.ruined 
+            ? "text-xs px-2.5 py-1 rounded bg-rose-500/20 border border-rose-500/40 text-rose-400 font-medium"
+            : "text-xs px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-medium";
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderTrajectoryChart(bankrolls, b0, stratName, ruined) {
+      const ctx = document.getElementById('chartTrajectory').getContext('2d');
+      if (chartTrajInstance) chartTrajInstance.destroy();
+
+      const labels = bankrolls.map((_, i) => i);
+      const baseline = bankrolls.map(() => Number(b0));
+
+      chartTrajInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `Bankroll (${stratName})`,
+              data: bankrolls,
+              borderColor: ruined ? '#f43f5e' : '#38bdf8',
+              backgroundColor: ruined ? 'rgba(244, 63, 94, 0.1)' : 'rgba(56, 189, 248, 0.1)',
+              fill: true,
+              borderWidth: 2,
+              tension: 0.1,
+              pointRadius: 0
+            },
+            {
+              label: 'Capital Inicial (Línea Base)',
+              data: baseline,
+              borderColor: '#64748b',
+              borderDash: [5, 5],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1' } }
+          },
+          scales: {
+            x: { 
+              title: { display: true, text: 'Giro de la Ruleta (Spin #)', color: '#94a3b8' },
+              ticks: { color: '#94a3b8' } 
+            },
+            y: { 
+              title: { display: true, text: 'Bankroll Actual', color: '#94a3b8' },
+              ticks: { color: '#94a3b8' }, 
+              grid: { color: '#334155' } 
+            }
+          }
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchMetrics();
+    });
+  </script>
+</body>
+</html>
+
