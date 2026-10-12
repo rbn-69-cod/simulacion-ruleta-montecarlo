@@ -1,5 +1,7 @@
 # 🎰 Replicación Científica: Simulación Monte Carlo de Estrategias de Ruleta
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rbn-69-cod/simulacion-ruleta-montecarlo/blob/main/simulacion_ruleta.ipynb)
+
 Replicación empírica completa del artículo de investigación:  
 > **Sarnecki, K. (2026).** *Comparison of the effectiveness of roulette betting strategies using Monte Carlo simulation*. **Journal of Computer Sciences Institute**, 40, 232–238.
 
